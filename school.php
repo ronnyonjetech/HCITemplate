@@ -1,9 +1,371 @@
+<?php
+class Calendar {  
+     
+    /**
+     * Constructor
+     */
+    public function __construct(){     
+        $this->naviHref = htmlentities($_SERVER['PHP_SELF']);
+    }
+     
+    /********************* PROPERTY ********************/  
+    private $dayLabels = array("Mon","Tue","Wed","Thu","Fri","Sat","Sun");
+     
+    private $currentYear=0;
+     
+    private $currentMonth=0;
+     
+    private $currentDay=0;
+     
+    private $currentDate=null;
+     
+    private $daysInMonth=0;
+     
+    private $naviHref= null;
+     
+    /********************* PUBLIC **********************/  
+        
+    /**
+    * print out the calendar
+    */
+    public function show() {
+        $year  = null;
+         
+        $month = null;
+         
+        if(null==$year&&isset($_GET['year'])){
+ 
+            $year = $_GET['year'];
+         
+        }else if(null==$year){
+ 
+            $year = date("Y",time());  
+         
+        }          
+         
+        if(null==$month&&isset($_GET['month'])){
+ 
+            $month = $_GET['month'];
+         
+        }else if(null==$month){
+ 
+            $month = date("m",time());
+         
+        }                  
+         
+        $this->currentYear=$year;
+         
+        $this->currentMonth=$month;
+         
+        $this->daysInMonth=$this->_daysInMonth($month,$year);  
+         
+        $content='<div id="calendar">'.
+                        '<div class="box">'.
+                        $this->_createNavi().
+                        '</div>'.
+                        '<div class="box-content">'.
+                                '<ul class="label">'.$this->_createLabels().'</ul>';   
+                                $content.='<div class="clear"></div>';     
+                                $content.='<ul class="dates">';    
+                                 
+                                $weeksInMonth = $this->_weeksInMonth($month,$year);
+                                // Create weeks in a month
+                                for( $i=0; $i<$weeksInMonth; $i++ ){
+                                     
+                                    //Create days in a week
+                                    for($j=1;$j<=7;$j++){
+                                        $content.=$this->_showDay($i*7+$j);
+                                    }
+                                }
+                                 
+                                $content.='</ul>';
+                                 
+                                $content.='<div class="clear"></div>';     
+             
+                        $content.='</div>';
+                 
+        $content.='</div>';
+        return $content;   
+    }
+     
+    /********************* PRIVATE **********************/ 
+    /**
+    * create the li element for ul
+    */
+    private function _showDay($cellNumber){
+         
+        if($this->currentDay==0){
+             
+            $firstDayOfTheWeek = date('N',strtotime($this->currentYear.'-'.$this->currentMonth.'-01'));
+                     
+            if(intval($cellNumber) == intval($firstDayOfTheWeek)){
+                 
+                $this->currentDay=1;
+                 
+            }
+        }
+         
+        if( ($this->currentDay!=0)&&($this->currentDay<=$this->daysInMonth) ){
+             
+            $this->currentDate = date('Y-m-d',strtotime($this->currentYear.'-'.$this->currentMonth.'-'.($this->currentDay)));
+             
+            $cellContent = $this->currentDay;
+             
+            $this->currentDay++;   
+             
+        }else{
+             
+            $this->currentDate =null;
+ 
+            $cellContent=null;
+        }
+             
+         
+        return '<li id="li-'.$this->currentDate.'" class="'.($cellNumber%7==1?' start ':($cellNumber%7==0?' end ':' ')).
+                ($cellContent==null?'mask':'').'">'.$cellContent.'</li>';
+    }
+     
+    /**
+    * create navigation
+    */
+    private function _createNavi(){
+         
+        $nextMonth = $this->currentMonth==12?1:intval($this->currentMonth)+1;
+         
+        $nextYear = $this->currentMonth==12?intval($this->currentYear)+1:$this->currentYear;
+         
+        $preMonth = $this->currentMonth==1?12:intval($this->currentMonth)-1;
+         
+        $preYear = $this->currentMonth==1?intval($this->currentYear)-1:$this->currentYear;
+         
+        return
+            '<div class="header">'.
+                '<a class="prev" href="'.$this->naviHref.'?month='.sprintf('%02d',$preMonth).'&year='.$preYear.'">Prev</a>'.
+                    '<span class="title">'.date('Y M',strtotime($this->currentYear.'-'.$this->currentMonth.'-1')).'</span>'.
+                '<a class="next" href="'.$this->naviHref.'?month='.sprintf("%02d", $nextMonth).'&year='.$nextYear.'">Next</a>'.
+            '</div>';
+    }
+         
+    /**
+    * create calendar week labels
+    */
+    private function _createLabels(){  
+                 
+        $content='';
+         
+        foreach($this->dayLabels as $index=>$label){
+             
+            $content.='<li class="'.($label==6?'end title':'start title').' title">'.$label.'</li>';
 
+        if($this->currentDate == date('Y-m-d'))
+        {
+
+        $finalDisplay.= ''.$cellContent.'';
+
+         }
+ 
+        }
+
+         
+        return $content;
+    }
+     
+     
+     
+    /**
+    * calculate number of weeks in a particular month
+    */
+    private function _weeksInMonth($month=null,$year=null){
+         
+        if( null==($year) ) {
+            $year =  date("Y",time()); 
+        }
+         
+        if(null==($month)) {
+            $month = date("m",time());
+        }
+         
+        // find number of days in this month
+        $daysInMonths = $this->_daysInMonth($month,$year);
+         
+        $numOfweeks = ($daysInMonths%7==0?0:1) + intval($daysInMonths/7);
+         
+        $monthEndingDay= date('N',strtotime($year.'-'.$month.'-'.$daysInMonths));
+         
+        $monthStartDay = date('N',strtotime($year.'-'.$month.'-01'));
+         
+        if($monthEndingDay<$monthStartDay){
+             
+            $numOfweeks++;
+         
+        }
+         
+        return $numOfweeks;
+    }
+ 
+    /**
+    * calculate number of days in a particular month
+    */
+    private function _daysInMonth($month=null,$year=null){
+         
+        if(null==($year))
+            $year =  date("Y",time()); 
+ 
+        if(null==($month))
+            $month = date("m",time());
+             
+        return date('t',strtotime($year.'-'.$month.'-01'));
+    }
+
+    
+     
+}
+
+
+
+
+
+
+?>
 
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
+   <style type="text/css">
+   	/*******************************Calendar Top Navigation*********************************/
+div#calendar{
+  margin:0px auto;
+  padding:0px;
+  width: 602px;
+  font-family:Helvetica, "Times New Roman", Times, serif;
+}
+ 
+div#calendar div.box{
+    position:relative;
+    top:0px;
+    left:0px;
+    width:100%;
+    height:40px;
+    background-color:   #787878 ;      
+}
+ 
+div#calendar div.header{
+    line-height:40px;  
+    vertical-align:middle;
+    position:absolute;
+    left:11px;
+    top:0px;
+    width:582px;
+    height:40px;   
+    text-align:center;
+}
+ 
+div#calendar div.header a.prev,div#calendar div.header a.next{ 
+    position:absolute;
+    top:0px;   
+    height: 17px;
+    display:block;
+    cursor:pointer;
+    text-decoration:none;
+    color:#FFF;
+}
+ 
+div#calendar div.header span.title{
+    color:#FFF;
+    font-size:18px;
+}
+ 
+ 
+div#calendar div.header a.prev{
+    left:0px;
+}
+ 
+div#calendar div.header a.next{
+    right:0px;
+}
+ 
+ 
+ 
+ 
+/*******************************Calendar Content Cells*********************************/
+div#calendar div.box-content{
+    border:1px solid #787878 ;
+    border-top:none;
+}
+ 
+ 
+ 
+div#calendar ul.label{
+    float:left;
+    margin: 0px;
+    padding: 0px;
+    margin-top:5px;
+    margin-left: 5px;
+}
+ 
+div#calendar ul.label li{
+    margin:0px;
+    padding:0px;
+    margin-right:5px;  
+    float:left;
+    list-style-type:none;
+    width:80px;
+    height:40px;
+    line-height:40px;
+    vertical-align:middle;
+    text-align:center;
+    color:#000;
+    font-size: 15px;
+    background-color: transparent;
+}
+ 
+ 
+div#calendar ul.dates{
+    float:left;
+    margin: 0px;
+    padding: 0px;
+    margin-left: 5px;
+    margin-bottom: 5px;
+}
+ 
+/** overall width = width+padding-right**/
+div#calendar ul.dates li{
+    margin:0px;
+    padding:0px;
+    margin-right:5px;
+    margin-top: 5px;
+    line-height:80px;
+    vertical-align:middle;
+    float:left;
+    list-style-type:none;
+    width:80px;
+    height:52px;
+    font-size:18px;
+    background-color: #DDD;
+    color:#000;
+    text-align:center; 
+}
+ 
+:focus{
+    outline:none;
+}
+ 
+div.clear{
+    clear:both;
+}     
 
+
+
+
+
+
+
+
+
+
+
+   	
+   </style>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
     <!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
@@ -27,10 +389,10 @@
         
   <link rel='dns-prefetch' href='//fonts.googleapis.com' />
 <link rel='dns-prefetch' href='//s.w.org' />
-<link rel="alternate" type="application/rss+xml" title="Riara Group of Schools &raquo; Feed" href="https://www.riaraschools.ac.ke/?feed=rss2" />
-<link rel="alternate" type="application/rss+xml" title="Riara Group of Schools &raquo; Comments Feed" href="https://www.riaraschools.ac.ke/?feed=comments-rss2" />
-<link rel="alternate" type="text/calendar" title="Riara Group of Schools &raquo; iCal Feed" href="https://www.riaraschools.ac.ke?post_type=tribe_events&#038;ical=1" />
-<link rel="alternate" type="application/rss+xml" title="Riara Group of Schools &raquo; Events Feed" href="https://www.riaraschools.ac.ke?post_type=tribe_events&#038;feed=rss2" />
+<link rel="alternate" type="application/rss+xml" title="Riara Group of Schools &raquo; Feed" href="" />
+<link rel="alternate" type="application/rss+xml" title="Riara Group of Schools &raquo; Comments Feed" href="" />
+<link rel="alternate" type="text/calendar" title="Riara Group of Schools &raquo; iCal Feed" href="" />
+<link rel="alternate" type="application/rss+xml" title="Riara Group of Schools &raquo; Events Feed" href="" />
         <script type="text/javascript">
             window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/11\/72x72\/","ext":".png","svgUrl":"https:\/\/s.w.org\/images\/core\/emoji\/11\/svg\/","svgExt":".svg","source":{"concatemoji":"https:\/\/www.riaraschools.ac.ke\/wp-includes\/js\/wp-emoji-release.min.js?ver=4.9.14"}};
             !function(a,b,c){function d(a,b){var c=String.fromCharCode;l.clearRect(0,0,k.width,k.height),l.fillText(c.apply(this,a),0,0);var d=k.toDataURL();l.clearRect(0,0,k.width,k.height),l.fillText(c.apply(this,b),0,0);var e=k.toDataURL();return d===e}function e(a){var b;if(!l||!l.fillText)return!1;switch(l.textBaseline="top",l.font="600 32px Arial",a){case"flag":return!(b=d([55356,56826,55356,56819],[55356,56826,8203,55356,56819]))&&(b=d([55356,57332,56128,56423,56128,56418,56128,56421,56128,56430,56128,56423,56128,56447],[55356,57332,8203,56128,56423,8203,56128,56418,8203,56128,56421,8203,56128,56430,8203,56128,56423,8203,56128,56447]),!b);case"emoji":return b=d([55358,56760,9792,65039],[55358,56760,8203,9792,65039]),!b}return!1}function f(a){var c=b.createElement("script");c.src=a,c.defer=c.type="text/javascript",b.getElementsByTagName("head")[0].appendChild(c)}var g,h,i,j,k=b.createElement("canvas"),l=k.getContext&&k.getContext("2d");for(j=Array("flag","emoji"),c.supports={everything:!0,everythingExceptFlag:!0},i=0;i<j.length;i++)c.supports[j[i]]=e(j[i]),c.supports.everything=c.supports.everything&&c.supports[j[i]],"flag"!==j[i]&&(c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&c.supports[j[i]]);c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&!c.supports.flag,c.DOMReady=!1,c.readyCallback=function(){c.DOMReady=!0},c.supports.everything||(h=function(){c.readyCallback()},b.addEventListener?(b.addEventListener("DOMContentLoaded",h,!1),a.addEventListener("load",h,!1)):(a.attachEvent("onload",h),b.attachEvent("onreadystatechange",function(){"complete"===b.readyState&&c.readyCallback()})),g=c.source||{},g.concatemoji?f(g.concatemoji):g.wpemoji&&g.twemoji&&(f(g.twemoji),f(g.wpemoji)))}(window,document,window._wpemojiSettings);
@@ -154,7 +516,7 @@ h6 { font-family: 'Roboto'; font-style: normal; font-weight: 300; }
     
         <!-- begin of logo area -->
         <div id="logo">
-                    <a href="https://www.riaraschools.ac.ke"><img src="" alt="Logo"/></a>
+                    <a href=""><img src="" alt="Logo"/></a>
         </div>
         <!-- end of logo area -->
         
@@ -343,626 +705,14 @@ h6 { font-family: 'Roboto'; font-style: normal; font-weight: 300; }
     <h2 class="tribe-events-visuallyhidden">Calendar of Events</h2>
 
     <table class="tribe-events-calendar">
-        <caption class="tribe-events-visuallyhidden">Calendar of Events</caption>
-        <thead>
-        <tr>
-                            <th id="tribe-events-monday" title="Monday" data-day-abbr="Mon">Monday</th>
-                            <th id="tribe-events-tuesday" title="Tuesday" data-day-abbr="Tue">Tuesday</th>
-                            <th id="tribe-events-wednesday" title="Wednesday" data-day-abbr="Wed">Wednesday</th>
-                            <th id="tribe-events-thursday" title="Thursday" data-day-abbr="Thu">Thursday</th>
-                            <th id="tribe-events-friday" title="Friday" data-day-abbr="Fri">Friday</th>
-                            <th id="tribe-events-saturday" title="Saturday" data-day-abbr="Sat">Saturday</th>
-                            <th id="tribe-events-sunday" title="Sunday" data-day-abbr="Sun">Sunday</th>
-                    </tr>
-        </thead>
-        <tbody>
-        <tr>
-                        
-            
-            <td class="tribe-events-othermonth tribe-events-past mobile-trigger tribe-event-day-27"
-                data-day="2020-04-27"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"April 27"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-27-0">
-
-            27  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-othermonth tribe-events-past mobile-trigger tribe-event-day-28"
-                data-day="2020-04-28"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"April 28"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-28-0">
-
-            28  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-othermonth tribe-events-past mobile-trigger tribe-event-day-29"
-                data-day="2020-04-29"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"April 29"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-29-0">
-
-            29  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-othermonth tribe-events-past mobile-trigger tribe-event-day-30"
-                data-day="2020-04-30"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"April 30"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-30-0">
-
-            30  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-01 tribe-events-right"
-                data-day="2020-05-01"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 1"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-1-0">
-
-            1   
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-02 tribe-events-right"
-                data-day="2020-05-02"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 2"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-2-0">
-
-            2   
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-03 tribe-events-right"
-                data-day="2020-05-03"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 3"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-3-0">
-
-            3   
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                                </tr>
-        <tr>
-            
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-04"
-                data-day="2020-05-04"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 4"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-4-0">
-
-            4   
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-05"
-                data-day="2020-05-05"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 5"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-5-0">
-
-            5   
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-06"
-                data-day="2020-05-06"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 6"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-6-0">
-
-            6   
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-07"
-                data-day="2020-05-07"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 7"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-7-0">
-
-            7   
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-08 tribe-events-right"
-                data-day="2020-05-08"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 8"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-8-0">
-
-            8   
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-09 tribe-events-right"
-                data-day="2020-05-09"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 9"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-9-0">
-
-            9   
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-10 tribe-events-right"
-                data-day="2020-05-10"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 10"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-10-0">
-
-            10  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                                </tr>
-        <tr>
-            
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-11"
-                data-day="2020-05-11"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 11"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-11-0">
-
-            11  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-12"
-                data-day="2020-05-12"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 12"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-12-0">
-
-            12  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-13"
-                data-day="2020-05-13"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 13"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-13-0">
-
-            13  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-14"
-                data-day="2020-05-14"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 14"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-14-0">
-
-            14  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-15 tribe-events-right"
-                data-day="2020-05-15"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 15"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-15-0">
-
-            15  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-16 tribe-events-right"
-                data-day="2020-05-16"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 16"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-16-0">
-
-            16  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-past mobile-trigger tribe-event-day-17 tribe-events-right"
-                data-day="2020-05-17"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 17"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-17-0">
-
-            17  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                                </tr>
-        <tr>
-            
-            
-            <td class="tribe-events-thismonth tribe-events-present mobile-trigger tribe-event-day-18"
-                data-day="2020-05-18"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 18"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-18-0">
-
-            18  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-19"
-                data-day="2020-05-19"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 19"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-19-0">
-
-            19  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-20"
-                data-day="2020-05-20"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 20"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-20-0">
-
-            20  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-21"
-                data-day="2020-05-21"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 21"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-21-0">
-
-            21  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-22 tribe-events-right"
-                data-day="2020-05-22"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 22"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-22-0">
-
-            22  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-23 tribe-events-right"
-                data-day="2020-05-23"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 23"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-23-0">
-
-            23  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-24 tribe-events-right"
-                data-day="2020-05-24"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 24"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-24-0">
-
-            24  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                                </tr>
-        <tr>
-            
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-25"
-                data-day="2020-05-25"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 25"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-25-0">
-
-            25  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-26"
-                data-day="2020-05-26"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 26"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-26-0">
-
-            26  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-27"
-                data-day="2020-05-27"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 27"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-27-1">
-
-            27  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-28"
-                data-day="2020-05-28"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 28"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-28-1">
-
-            28  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-29 tribe-events-right"
-                data-day="2020-05-29"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 29"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-29-1">
-
-            29  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-30 tribe-events-right"
-                data-day="2020-05-30"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 30"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-30-1">
-
-            30  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                        
-            
-            <td class="tribe-events-thismonth tribe-events-future mobile-trigger tribe-event-day-31 tribe-events-right"
-                data-day="2020-05-31"
-                data-tribejson='{"i18n":{"find_out_more":"Find out more \u00bb","for_date":"Events for"},"date_name":"May 31"}'
-                >
-                
-<!-- Day Header -->
-<div id="tribe-events-daynum-31-0">
-
-            31  
-</div>
-
-<!-- Events List -->
-
-<!-- View More -->
-            </td>
-                    </tr>
-        </tbody>
-    </table><!-- .tribe-events-calendar -->
+       <?php
+//include 'calendar.php';
+ 
+$calendar = new Calendar();
+
+ 
+echo $calendar->show();
+?>
 
     <!-- Month Footer -->
         <div id="tribe-events-footer">
@@ -1025,6 +775,7 @@ h6 { font-family: 'Roboto'; font-style: normal; font-weight: 300; }
                 <abbr class="tribe-events-abbr tribe-event-date-start">[[=dateDisplay]] <\/abbr>
             <\/div>
             [[ if(imageTooltipSrc.length) { ]]
+
             <div class="tribe-events-event-thumb">
                 <img src="[[=imageTooltipSrc]]" alt="[[=title]]" \/>
             <\/div>
